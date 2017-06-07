@@ -116,6 +116,22 @@ def transferMatrix(eFunc, stateRange, params, blockSize, check=True):
 	return tMat,leftEnds,rightEnds
 
 def transferMatrixVariableSize(eFunc, stateRange, params):
+	'''
+	This method takes as input:
+		eFunc 		-	The Hamiltonian. This function must take as input a list of
+						items drawn from stateRange and a list of parameters given
+						by params.
+		stateRange	-	This is a list specifying the allowed states on a site.
+		params 		-	This is a list of the parameters in the Hamiltonian.
+						These are sympy variables.
+
+
+	This method attempts to find the correct block size for the transfer matrix.
+	It does this by starting with a small block and increasing the size by one site
+	until the check procedure does not fail. This is not guaranteed to work in pathological
+	cases, but in cases with simple interacting Hamiltonians should be fine.
+
+	'''
 	blockSize = 1
 	while True:
 		tm = transferMatrix(eFunc, stateRange, params, blockSize)
