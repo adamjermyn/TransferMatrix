@@ -146,6 +146,12 @@ def transferMatrixVariableSize(eFunc, stateRange, params):
 
 
 def wrapper(tm,leftEnds,rightEnds,params):
+	'''
+	This method takes as input a transfer matrix as well as the associated
+	endcaps and parameters and wraps them so that they may be called as regular
+	numeric functions rather than returning symbolic expressions.
+
+	'''
 	T = sp.lambdify(params,tm,modules='mpmath')
 	eL = [sp.lambdify(params,l,modules='mpmath') for l in leftEnds]
 	eR = [sp.lambdify(params,r,modules='mpmath') for r in rightEnds]
