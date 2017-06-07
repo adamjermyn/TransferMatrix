@@ -23,8 +23,51 @@ def partition(n, blockSize):
 	else:
 		return None
 
+def transferMatrix(eFunc, stateRange, params, blockSize, check=True):
+	'''
+	This function computes the transfer matrix associated with a Hamiltonian.
+	The input parameters are:
+		eFunc 		-	The Hamiltonian. This function must take as input a list of
+						items drawn from stateRange and a list of parameters given
+						by params.
+		stateRange	-	This is a list specifying the allowed states on a site.
+		params 		-	This is a list of the parameters in the Hamiltonian.
+						These are sympy variables.
+		blockSize	-	Transfer matrices generally require blocking together
+						neighbouring sites. This is an integer specifying
+						how many sites to block together. If this is set
+						incorrectly the result will generically be wrong.
+						This will never exceed the maximum range of the
+						interactions in the system.
+		check		-	An optional argument which defaults to True. If True
+						the code will perform a basic check to see if the
+						block size is correct. This is done just by examining the
+						energy associated with a block which is 50% larger.
 
-def transferMatrix(eFunc, stateRange, params, blockSize,check=True):
+	This method implements a brute-force approach to finding the transfer matrix
+	for a system. This works by constructing three neighbouring blocks of size blockSize.
+	The states of these blocks are x, y, and y. For each (x,y) we compute eFunc(x,y,y).
+	We also compute eFunc(y,y), the energy of two blocks of size blockSize in the
+	same state. We subtract these and exponentiate, and take this to be the value of the
+	transfer matrix for the state pair (x,y).
+
+	The same method is then used to compute so-called endCap matrices. These matrices
+	give the contribution of blocks smaller than blockSize which are attached to the
+	ends of the system, so that we can deal with system sizes which are not integer
+	multiples of the block size.
+
+	This method relies on the range of interactions being at most blockSize. This is so
+	that eFunc(x, y, y) - eFunc(y, y) is precisely the contribution to the energy
+	associated with adding on the block x to a block y, irrespective of the rest of the
+	system. As a result if there are interactions which are longer-ranged than blockSize
+	then this result will be invalid
+
+	The mathematical operations are all performed in sympy so that this expensive operation
+	need only be performed once.
+	'''
+
+
+
 	# eFunc must accept an array of states, each drawn from stateRange
 
 	# Calculate transfer matrix
