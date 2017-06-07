@@ -150,14 +150,32 @@ def wrapper(tm,leftEnds,rightEnds,params):
 	This method takes as input a transfer matrix as well as the associated
 	endcaps and parameters and wraps them so that they may be called as regular
 	numeric functions rather than returning symbolic expressions.
-
 	'''
+
 	T = sp.lambdify(params,tm,modules='mpmath')
 	eL = [sp.lambdify(params,l,modules='mpmath') for l in leftEnds]
 	eR = [sp.lambdify(params,r,modules='mpmath') for r in rightEnds]
 	return T,eL,eR
 
 def fN(T,eL,eR,params,blockSize,n):
+	'''
+	This method takes as input:
+		T 			-	The wrapped (numerical) transfer matrix.
+		eL 			-	The wrapped (numerical) left endcap list.
+		eR 			-	The wrapped (numerical) right endcap list.
+		params 		-	The numerical values of the parameters.
+		blockSize 	-	The block size used to construct T.
+		n 			-	The size of the system of interest.
+
+	This method computes the slope and intercept of the free energy form
+
+	F(L) = a + b L
+
+	b is computed using the maximal eigenvalue of T. The free energy is then computed
+	for the system size n and this is used to determine a.
+
+	'''
+
 	# Inputs must be wrapped already
 	n1,n2,n3 = partition(n,blockSize)
 	e1 = eL[n1-1](*params)
