@@ -132,14 +132,18 @@ def transferMatrixVariableSize(eFunc, stateRange, params):
 	cases, but in cases with simple interacting Hamiltonians should be fine.
 
 	'''
+
 	blockSize = 1
+
 	while True:
-		tm = transferMatrix(eFunc, stateRange, params, blockSize)
-		if tm is not None:
+
+		try:
+			tm = transferMatrix(eFunc, stateRange, params, blockSize)
 			print('Final Size:',blockSize)
 			return tm[0],tm[1],tm[2],blockSize
-		blockSize += 1
-		print(blockSize)
+		except ValueError:
+			blockSize += 1
+
 
 def wrapper(tm,leftEnds,rightEnds,params):
 	T = sp.lambdify(params,tm,modules='mpmath')
