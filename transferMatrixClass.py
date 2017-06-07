@@ -4,6 +4,26 @@ from sympy import exp
 import itertools as it
 from numpy import real,log
 
+def partition(n, blockSize):
+	'''
+	This function takes as input:
+		n 			-	The size of the system of interest.
+		blockSize	-	The size of the blocks of the transfer matrix.
+
+	It returns a tuple containing the size of the left endcap, the number of
+	blocks, and the size of the right endcap in that order. The right endcap
+	is always chosen to have size 1.
+	'''
+	if n >= 2+blockSize:
+		m = n - 1
+		q = m % blockSize
+		if q == 0:
+			q += blockSize
+		return q,(n-1-q)/blockSize,1
+	else:
+		return None
+
+
 def transferMatrix(eFunc, stateRange, params, blockSize,check=True):
 	# eFunc must accept an array of states, each drawn from stateRange
 
@@ -54,25 +74,6 @@ def wrapper(tm,leftEnds,rightEnds,params):
 	eL = [sp.lambdify(params,l,modules='mpmath') for l in leftEnds]
 	eR = [sp.lambdify(params,r,modules='mpmath') for r in rightEnds]
 	return T,eL,eR
-
-def partition(n, blockSize):
-	'''
-	This function takes as input:
-		n 			-	The size of the system of interest.
-		blockSize	-	The size of the blocks of the transfer matrix.
-
-	It returns a tuple containing the size of the left endcap, the number of
-	blocks, and the size of the right endcap in that order. The right endcap
-	is always chosen to have size 1.
-	'''
-	if n >= 2+blockSize:
-		m = n - 1
-		q = m % blockSize
-		if q == 0:
-			q += blockSize
-		return q,(n-1-q)/blockSize,1
-	else:
-		return None
 
 def fN(T,eL,eR,params,blockSize,n):
 	# Inputs must be wrapped already
