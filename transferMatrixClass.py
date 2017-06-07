@@ -51,10 +51,13 @@ def transferMatrix(eFunc, stateRange, params, blockSize, check=True):
 	same state. We subtract these and exponentiate, and take this to be the value of the
 	transfer matrix for the state pair (x,y).
 
-	The same method is then used to compute so-called endCap matrices. These matrices
+	The same method is then used to compute so-called endcap matrices. These matrices
 	give the contribution of blocks smaller than blockSize which are attached to the
 	ends of the system, so that we can deal with system sizes which are not integer
-	multiples of the block size.
+	multiples of the block size. The left endcap is computed with precisely the same
+	logic, while the right endcap just returns exp(-eFunc(x + y)) with no subtraction.
+	This has to be done at one endcap to anchor the energies, and we choose to do it 
+	at the right one.
 
 	This method relies on the range of interactions being at most blockSize. This is so
 	that eFunc(x, y, y) - eFunc(y, y) is precisely the contribution to the energy
@@ -87,7 +90,7 @@ def transferMatrix(eFunc, stateRange, params, blockSize, check=True):
 	# Initialize endcap states
 	endStates = list([list(it.product(stateRange, repeat=l)) for l in range(1, blockSize + 1)])
 
-	# Calculate left end cap
+	# Compute left end cap
 	leftEnds = []
 	for l in range(blockSize):
 		print(l)
@@ -97,7 +100,7 @@ def transferMatrix(eFunc, stateRange, params, blockSize, check=True):
 				end[i,j] = exp(eFunc(y+y,params) - eFunc(x+y+y,params))
 		leftEnds.append(end)
 
-	# Calculate right end cap
+	# Compute right end cap
 	rightEnds = []
 	for l in range(blockSize):
 		print(l)
