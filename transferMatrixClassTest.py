@@ -1,5 +1,4 @@
 import transferMatrixClass as tmc
-import transferFast
 import models
 import itertools as it
 import numpy as np
