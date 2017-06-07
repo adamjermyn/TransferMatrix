@@ -176,23 +176,31 @@ def fN(T,eL,eR,params,blockSize,n):
 
 	'''
 
-	# Inputs must be wrapped already
+	# Partition the system size into left cap, blocks, right cap
 	n1,n2,n3 = partition(n,blockSize)
+
+	# Evaluate endcaps at partition sizes
 	e1 = eL[n1-1](*params)
 	e2 = eR[n3-1](*params)
+
+	# Evaluate transfer matrix
 	tm = T(*params)
-	e1m = sp.Max(e1)
-	e2m = sp.Max(e2)
-	tmm = sp.Max(tm)
-	e1 /= e1m
-	e2 /= e2m
-	tmm /= tmm
-	e1 = np.array(eL[n1-1](*params))
-	e2 = np.array(eR[n3-1](*params))
-	tm = np.array(T(*params))
+
+
+	# Cast to numpy arrays
+	e1 = np.array(e1)
+	e2 = np.array(e2)
+	tm = np.array(tm)
+
+	# Compute slope
 	m = max(np.linalg.eigvals(tm))
-	z = np.sum(e1.dot(np.linalg.matrix_power(tm/m,n2-1)).dot(e2))
-	f = -real(log(e1m) + log(e2m) + log(z) + (log(m)+log(tmm))*(n2-1))
 	slope = -real(log(m)/blockSize)
+
+	# Compute free energy
+	z = np.sum(e1.dot(np.linalg.matrix_power(tm/m,n2-1)).dot(e2))
+	f = -real(log(z) + log(m)*(n2-1))
+
+	# Evaluate intercept
 	inter = f - slope*n
+	
 	return slope,inter,f
