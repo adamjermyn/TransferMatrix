@@ -19,7 +19,7 @@ def partition(n, blockSize):
 		q = m % blockSize
 		if q == 0:
 			q += blockSize
-		return q,(n-1-q)/blockSize,1
+		return q,(n-1-q)//blockSize,1
 	else:
 		return None
 
