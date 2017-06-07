@@ -79,7 +79,7 @@ def transferMatrix(eFunc, stateRange, params, blockSize, check=True):
 	for i, x in enumerate(states):
 		print(i)
 		for j, y in enumerate(states):
-			tMat[i,j] = exp(eFunc(y + y, params) - eFunc(x + y + y,))
+			tMat[i,j] = exp(eFunc(y + y, params) - eFunc(x + y + y, params))
 
 			# Test block size (not guaranteed to catch errors in pathological cases)
 			if check:
@@ -186,11 +186,10 @@ def fN(T,eL,eR,params,blockSize,n):
 	# Evaluate transfer matrix
 	tm = T(*params)
 
-
 	# Cast to numpy arrays
-	e1 = np.array(e1)
-	e2 = np.array(e2)
-	tm = np.array(tm)
+	e1 = np.array(e1.tolist(), dtype=float)
+	e2 = np.array(e2.tolist(), dtype=float)
+	tm = np.array(tm.tolist(), dtype=float)
 
 	# Compute slope
 	m = max(np.linalg.eigvals(tm))
@@ -202,5 +201,5 @@ def fN(T,eL,eR,params,blockSize,n):
 
 	# Evaluate intercept
 	inter = f - slope*n
-	
+
 	return slope,inter,f
