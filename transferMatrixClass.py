@@ -107,6 +107,9 @@ def transferMatrix(eFunc, stateRange, params, blockSize, check=True):
 		end = sp.zeros(len(states),len(endStates[l]))
 		for i,x in enumerate(states):
 			for j,y in enumerate(endStates[l]):
+				# No subtraction here, as we want to set the energies in the case
+				# of a single block with a right endcap (what we called anchoring the
+				# energy in the docs above).
 				end[i,j] = exp(-eFunc(x+y,params))
 		rightEnds.append(end)
 
