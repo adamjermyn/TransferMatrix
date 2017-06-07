@@ -66,37 +66,44 @@ def transferMatrix(eFunc, stateRange, params, blockSize, check=True):
 	need only be performed once.
 	'''
 
+	# Generate block states
+	states = list(it.product(stateRange, repeat=blockSize))
 
+	# Initialize matrix
+	tMat = sp.zeros(len(states), len(states))
 
-	# eFunc must accept an array of states, each drawn from stateRange
-
-	# Calculate transfer matrix
-	tMat = sp.zeros(len(stateRange)**blockSize,len(stateRange)**blockSize)
-	for i,x in enumerate(it.product(stateRange,repeat=blockSize)):
+	# Compute transfer matrix
+	for i, x in enumerate(states):
 		print(i)
-		for j,y in enumerate(it.product(stateRange,repeat=blockSize)):
-			tMat[i,j] = exp(eFunc(y+y,params) - eFunc(x+y+y,params))
+		for j, y in enumerate(states):
+			tMat[i,j] = exp(eFunc(y + y, params) - eFunc(x + y + y,))
+
+			# Test block size (not guaranteed to catch errors in pathological cases)
 			if check:
 				for z in it.product(stateRange,repeat=blockSize):
 					if exp(eFunc(y+z,params) - eFunc(x+y+z,params)) != tMat[i,j]:
-						return None
+						raise ValueError('Error: Block size too small.')
+
+	# Initialize endcap states
+	endStates = list([list(it.product(stateRange, repeat=l)) for l in range(1, blockSize + 1)])
+
 	# Calculate left end cap
 	leftEnds = []
-	for l in range(1,blockSize+1):
+	for l in range(blockSize):
 		print(l)
-		end = sp.zeros(len(stateRange)**l,len(stateRange)**blockSize)
-		for i,x in enumerate(it.product(stateRange,repeat=l)):
-			for j,y in enumerate(it.product(stateRange,repeat=blockSize)):
+		end = sp.zeros(len(endStates[l]),len(states))
+		for i,x in enumerate(endStates[l]):
+			for j,y in enumerate(states):
 				end[i,j] = exp(eFunc(y+y,params) - eFunc(x+y+y,params))
 		leftEnds.append(end)
 
 	# Calculate right end cap
 	rightEnds = []
-	for l in range(1,blockSize+1):
+	for l in range(blockSize):
 		print(l)
-		end = sp.zeros(len(stateRange)**blockSize,len(stateRange)**l)
-		for i,x in enumerate(it.product(stateRange,repeat=blockSize)):
-			for j,y in enumerate(it.product(stateRange,repeat=l)):
+		end = sp.zeros(len(states),len(endStates[l]))
+		for i,x in enumerate(states):
+			for j,y in enumerate(endStates[l]):
 				end[i,j] = exp(-eFunc(x+y,params))
 		rightEnds.append(end)
 
