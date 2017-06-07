@@ -55,7 +55,16 @@ def wrapper(tm,leftEnds,rightEnds,params):
 	eR = [sp.lambdify(params,r,modules='mpmath') for r in rightEnds]
 	return T,eL,eR
 
-def partition(n,blockSize):
+def partition(n, blockSize):
+	'''
+	This function takes as input:
+		n 			-	The size of the system of interest.
+		blockSize	-	The size of the blocks of the transfer matrix.
+
+	It returns a tuple containing the size of the left endcap, the number of
+	blocks, and the size of the right endcap in that order. The right endcap
+	is always chosen to have size 1.
+	'''
 	if n >= 2+blockSize:
 		m = n - 1
 		q = m % blockSize
