@@ -173,7 +173,7 @@ class actin:
 			return self.cofilinBindingFrac(pcopy)-bf
 		bindingE = brentqWrapper(ff)
 		if ff(bindingE)>1e-8:
-			print 'Error:',bindingE,ff(bindingE),ff(bindingE-1e-3),ff(bindingE+1e-3)
+			print('Error:',bindingE,ff(bindingE),ff(bindingE-1e-3),ff(bindingE+1e-3))
 		pcopy = np.copy(params)
 		pcopy[0] = bindingE	
 		return pcopy
