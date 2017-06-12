@@ -143,10 +143,10 @@ class actin:
 #		self.left = pickle.load(open('actLeft'))
 #		self.right = pickle.load(open('actRight'))
 #		self.blockSize = pickle.load(open('block'))
-		pickle.dump(self.tm,open('actTM','w+'))
-		pickle.dump(self.left,open('actLeft','w+'))
-		pickle.dump(self.right,open('actRight','w+'))
-		pickle.dump(self.blockSize,open('block','w+'))
+		pickle.dump(self.tm,open('actTM','wb+'))
+		pickle.dump(self.left,open('actLeft','wb+'))
+		pickle.dump(self.right,open('actRight','wb+'))
+		pickle.dump(self.blockSize,open('block','wb+'))
 		# Wrapped matrices
 		self.T,self.eL,self.eR = tmc.wrapper(self.tm,self.left,self.right,params)
 
