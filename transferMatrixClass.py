@@ -83,7 +83,7 @@ def transferMatrix(eFunc, stateRange, params, blockSize, check=True):
 
 			# Test block size (not guaranteed to catch errors in pathological cases)
 			if check:
-				for z in it.product(stateRange,repeat=blockSize):
+				for z in states:
 					if exp(eFunc(y+z,params) - eFunc(x+y+z,params)) != tMat[i,j]:
 						raise ValueError('Error: Block size too small.')
 
@@ -152,9 +152,13 @@ def wrapper(tm,leftEnds,rightEnds,params):
 	numeric functions rather than returning symbolic expressions.
 	'''
 
-	T = sp.lambdify(params,tm,modules='mpmath')
-	eL = [sp.lambdify(params,l,modules='mpmath') for l in leftEnds]
-	eR = [sp.lambdify(params,r,modules='mpmath') for r in rightEnds]
+	print('Wrapping transfer matrix...')
+	T = sp.lambdify(params,tm)
+	print('Wrapping left end caps...')
+	eL = list([sp.lambdify(params,l) for l in leftEnds])
+	print('Wrapping right end caps...')
+	eR = list([sp.lambdify(params,r) for r in rightEnds])
+	print('Done!')
 	return T,eL,eR
 
 def fN(T,eL,eR,params,blockSize,n):
@@ -190,6 +194,9 @@ def fN(T,eL,eR,params,blockSize,n):
 	e1 = np.array(e1.tolist(), dtype=float)
 	e2 = np.array(e2.tolist(), dtype=float)
 	tm = np.array(tm.tolist(), dtype=float)
+
+
+	print(tm)
 
 	# Compute slope
 	m = max(np.linalg.eigvals(tm))
