@@ -19,8 +19,7 @@ import dill as pickle
 # medium - eFuncTwoPlaneShortActinModel
 # long - eFuncTwoPlaneActinModel
 
-act = pickle.load(open('model.dat','rb'))
-
+act = models.actin(models.eFuncTwoPlaneShortActinModel,[0,1],sp.symbols('a b c'),blockSize=8)
 s = 'd'
 
 def evaluate(theta, x, y, c):
