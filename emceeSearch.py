@@ -58,14 +58,14 @@ def lnprob(theta, x, y, yerr,c):
 		return -np.inf
 	return lp + lnlike(theta, x, y, yerr,c)
 
-ndim, nwalkers, nper = 3, 100, 2
+ndim, nwalkers, nper = 3, 20, 2
 
 c,bindingF,length,dl,name = data(s)
 
 print('Beginning '+name+' search...')
 
 pos = [2*np.random.randn(ndim)+np.array([0,0,0]) for i in range(nwalkers)]
-sampler = em.EnsembleSampler(nwalkers, ndim, lnprob, args=(bindingF, length, dl,c))
+sampler = em.EnsembleSampler(nwalkers, ndim, lnprob, args=(bindingF, length, dl, c))
 
 for i in range(1000):
 	print(i)
