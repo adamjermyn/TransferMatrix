@@ -3,6 +3,7 @@ import numpy as np
 import transferMatrixClass as tmc
 from scipy.optimize import brentq
 from numpy import log
+
 # Helpers
 
 def brentqWrapper(func):
