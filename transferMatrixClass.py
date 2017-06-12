@@ -2,7 +2,8 @@ import numpy as np
 import sympy as sp
 from sympy import exp
 import itertools as it
-from numpy import real,log
+from numpy import real
+from mpmath import eig, log
 
 def partition(n, blockSize):
 	'''
@@ -153,11 +154,11 @@ def wrapper(tm,leftEnds,rightEnds,params):
 	'''
 
 	print('Wrapping transfer matrix...')
-	T = sp.lambdify(params,tm)
+	T = sp.lambdify(params, tm, "mpmath")
 	print('Wrapping left end caps...')
-	eL = list([sp.lambdify(params,l) for l in leftEnds])
+	eL = list([sp.lambdify(params, l, "mpmath") for l in leftEnds])
 	print('Wrapping right end caps...')
-	eR = list([sp.lambdify(params,r) for r in rightEnds])
+	eR = list([sp.lambdify(params, r, "mpmath") for r in rightEnds])
 	print('Done!')
 	return T,eL,eR
 
@@ -190,21 +191,13 @@ def fN(T,eL,eR,params,blockSize,n):
 	# Evaluate transfer matrix
 	tm = T(*params)
 
-	# Cast to numpy arrays
-	e1 = np.array(e1.tolist(), dtype=float)
-	e2 = np.array(e2.tolist(), dtype=float)
-	tm = np.array(tm.tolist(), dtype=float)
-
-
-	print(tm)
-
 	# Compute slope
-	m = max(np.linalg.eigvals(tm))
+	m = max(list(map(lambda x: x.real, eig(tm, left=False, right=False))))
 	slope = -real(log(m)/blockSize)
 
 	# Compute free energy
-	z = np.sum(e1.dot(np.linalg.matrix_power(tm/m,n2-1)).dot(e2))
-	f = -real(log(z) + log(m)*(n2-1))
+	z = sum(e1 * (tm**(n2 - 1)) * e2)
+	f = -real(log(z))
 
 	# Evaluate intercept
 	inter = f - slope*n
