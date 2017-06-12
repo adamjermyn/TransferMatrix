@@ -133,22 +133,18 @@ class actin:
 		self.params = params
 
 		# Initialize symbolic matrices
+		print('Constructing matrices...')
+
 		if blockSize is None:
 			self.tm,self.left,self.right,self.blockSize = tmc.transferMatrixVariableSize(self.model,stateRange,params)
 		else:
 			self.blockSize = blockSize
 			self.tm,self.left,self.right = tmc.transferMatrix(self.model,stateRange,params,blockSize,check=False)
-		import pickle
-#		self.tm = pickle.load(open('actTM'))
-#		self.left = pickle.load(open('actLeft'))
-#		self.right = pickle.load(open('actRight'))
-#		self.blockSize = pickle.load(open('block'))
-		pickle.dump(self.tm,open('actTM','wb+'))
-		pickle.dump(self.left,open('actLeft','wb+'))
-		pickle.dump(self.right,open('actRight','wb+'))
-		pickle.dump(self.blockSize,open('block','wb+'))
+
 		# Wrapped matrices
+		print('Wrapping...')
 		self.T,self.eL,self.eR = tmc.wrapper(self.tm,self.left,self.right,params)
+		print('Done.')
 
 	def fN(self,params,n=50):
 		return tmc.fN(self.T,self.eL,self.eR,params,self.blockSize,n)

@@ -11,6 +11,7 @@ import models
 import emcee as em
 from corner import corner
 import sympy as sp
+import dill as pickle
 
 # Can specify s = 'h' or 'd' for the two kinds of actin
 # The models we use are:
@@ -18,8 +19,8 @@ import sympy as sp
 # medium - eFuncTwoPlaneShortActinModel
 # long - eFuncTwoPlaneActinModel
 
+act = pickle.load(open('model.dat','rb'))
 
-act = models.actin(models.eFuncTwoPlaneShortActinModel,[0,1],sp.symbols('a b c'),blockSize=8)
 s = 'd'
 
 def evaluate(theta, x, y, c):
@@ -48,7 +49,7 @@ def lnlike(theta, x, y, yerr, c):
 
 def lnprior(theta):
 	q,w,j = theta
-	if -5.0 < q < 5.0 and -5.0 < w < 5.0 and -5.0 < j < 5.0:
+	if -3.0 < q < 3.0 and -3.0 < w < 3.0 and -3.0 < j < 3.0:
 		return 0.0
 	return -np.inf
 
