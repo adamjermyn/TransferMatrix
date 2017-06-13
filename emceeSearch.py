@@ -1,9 +1,7 @@
 from data import data
 from scipy.optimize import brentq
-from scipy.special import hyp2f1
 from numpy import exp,log,real
 import numpy as np
-import pickle
 import itertools as it
 import matplotlib.pyplot as plt
 import transferMatrixClass as tmc
@@ -11,7 +9,6 @@ import models
 import emcee as em
 from corner import corner
 import sympy as sp
-import dill as pickle
 
 # Can specify s = 'h' or 'd' for the two kinds of actin
 # The models we use are:
@@ -19,7 +16,9 @@ import dill as pickle
 # medium - eFuncTwoPlaneShortActinModel
 # long - eFuncTwoPlaneActinModel
 
-act = models.actin(models.eFuncTwoPlaneShortActinModel,[0,1],sp.symbols('a b c'),blockSize=8)
+_, _, _, blockSize = tmc.transferMatrixVariableSize(models.eFuncTwoPlaneShortActinModel, [0,1], sp.symbols('a b c'))
+
+act = models.actin(models.eFuncTwoPlaneShortActinModel, [0,1], sp.symbols('a b c'), blockSize=blockSize)
 s = 'd'
 
 def evaluate(theta, x, y, c):
@@ -29,7 +28,7 @@ def evaluate(theta, x, y, c):
 	fVals = np.zeros(bindingF.shape)
 	for i,bf in enumerate(bindingF):
 		p,_,_ = act.bindingFinder((0,q,w),bf)
-		print(p)
+#		print(p)
 		pVals[i] = p
 		fVals[i] = act.fN((p,q,w))[1]
 	model = models.meanL(c,fVals,j)
@@ -48,7 +47,7 @@ def lnlike(theta, x, y, yerr, c):
 
 def lnprior(theta):
 	q,w,j = theta
-	if -3.0 < q < 3.0 and -3.0 < w < 3.0 and -3.0 < j < 3.0:
+	if -3.0 < q < 3.0 and -3.0 < w < 3.0 and -15.0 < j < 0.0:
 		return 0.0
 	return -np.inf
 
@@ -56,22 +55,24 @@ def lnprob(theta, x, y, yerr,c):
 	lp = lnprior(theta)
 	if not np.isfinite(lp):
 		return -np.inf
+	print('Likelihood:',lp + lnlike(theta, x, y, yerr,c))
+	print('Params:',theta)
 	return lp + lnlike(theta, x, y, yerr,c)
 
-ndim, nwalkers, nper = 3, 20, 2
+ndim, nwalkers, nper = 3, 8, 20
 
 c,bindingF,length,dl,name = data(s)
 
 print('Beginning '+name+' search...')
 
-pos = [2*np.random.randn(ndim)+np.array([0,0,0]) for i in range(nwalkers)]
-sampler = em.EnsembleSampler(nwalkers, ndim, lnprob, args=(bindingF, length, dl, c))
+pos = [2*np.random.randn(ndim)+np.array([0,0,-7.5]) for i in range(nwalkers)]
+sampler = em.EnsembleSampler(nwalkers, ndim, lnprob, args=(bindingF, length, dl, c), threads=8)
 
 for i in range(1000):
 	print(i)
 	pos, prob, state = sampler.run_mcmc(pos, nper)
 	print('Sampled.')
-	samples = sampler.chain[:, nper*i/2:, :].reshape((-1, ndim))
+	samples = sampler.chain[:, nper*i//2:, :].reshape((-1, ndim))
 	sampless = np.copy(samples)
 	q_mcmc, w_mcmc, j_mcmc = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                              zip(*np.percentile(sampless, [16, 50, 84],
@@ -81,8 +82,8 @@ for i in range(1000):
 	fig = corner(samples, labels=["$Q$", "$W$","$J$", "$\ln\,f$"])
 	fig.savefig('triangle'+s+'.png')
 	plt.close('all')
-	plt.scatter(bindingF,length/100)
-	plt.errorbar(bindingF,length/100,yerr=dl/100)
+	plt.scatter(bindingF,length)
+	plt.errorbar(bindingF,length,yerr=dl)
 	bFhighRes = np.linspace(min(bindingF),max(bindingF),num=100,endpoint=True)
 	fHR = np.zeros(100)
 	for i,x in enumerate(bFhighRes):
@@ -91,7 +92,7 @@ for i in range(1000):
 		if i%10==0:
 			print(p)
 	mlHighRes = models.meanL(c,fHR,j_mcmc[0])
-	plt.plot(bFhighRes,mlHighRes/100)
+	plt.plot(bFhighRes,mlHighRes)
 	plt.xlabel('Cofilin Binding Fraction')
 	plt.ylabel('Filament length ($\mu m$)')
 	plt.title(name)
