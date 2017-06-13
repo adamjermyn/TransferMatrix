@@ -2,8 +2,8 @@ import numpy as np
 import sympy as sp
 from sympy import exp
 import itertools as it
-from numpy import real
-from mpmath import eig, log
+from numpy import real, log
+import mpmath as mp
 
 def partition(n, blockSize):
 	'''
@@ -139,10 +139,11 @@ def transferMatrixVariableSize(eFunc, stateRange, params):
 	while True:
 
 		try:
-			tm = transferMatrix(eFunc, stateRange, params, blockSize)
+			tm = transferMatrix(eFunc, stateRange, params, blockSize, check=True)
 			print('Final Size:',blockSize)
 			return tm[0],tm[1],tm[2],blockSize
 		except ValueError:
+			print('Tried size',blockSize,'. Incrementing.')
 			blockSize += 1
 
 
@@ -155,14 +156,16 @@ def wrapper(tm,leftEnds,rightEnds,params):
 
 	print('Wrapping transfer matrix...')
 	T = sp.lambdify(params, tm, "mpmath")
+	print('Wrapping transfer matrix derivative...')
+	dT = sp.lambdify(params, tm.diff(params[0]), "mpmath")
 	print('Wrapping left end caps...')
 	eL = list([sp.lambdify(params, l, "mpmath") for l in leftEnds])
 	print('Wrapping right end caps...')
 	eR = list([sp.lambdify(params, r, "mpmath") for r in rightEnds])
 	print('Done!')
-	return T,eL,eR
+	return T,eL,eR,dT
 
-def fN(T,eL,eR,params,blockSize,n):
+def fN(T,eL,eR,dT,params,blockSize,n):
 	'''
 	This method takes as input:
 		T 			-	The wrapped (numerical) transfer matrix.
@@ -188,18 +191,48 @@ def fN(T,eL,eR,params,blockSize,n):
 	e1 = eL[n1-1](*params)
 	e2 = eR[n3-1](*params)
 
-	# Evaluate transfer matrix
+	# Evaluate transfer matrix and derivative
 	tm = T(*params)
+	dt = dT(*params)
 
-	# Compute slope
-	m = max(list(map(lambda x: x.real, eig(tm, left=False, right=False))))
-	slope = -real(log(m)/blockSize)
+	# Normalize
+	sh = np.array(tm.tolist(), dtype=float).shape
+	y = -1e100
+	for i in range(sh[0]):
+		for j in range(sh[1]):
+			if abs(tm[i,j]) > y:
+				y = abs(tm[i,j])
+
+	tm /= y
+	dt /= y
+
+	# Cast to numpy
+	e1 = np.array(e1.tolist(), dtype=float)
+	e2 = np.array(e2.tolist(), dtype=float)
+	tm = np.array(tm.tolist(), dtype=float)
+	dt = np.array(dt.tolist(), dtype=float)
+
+	# Compute slope and slope derivative
+	vals, vecs = np.linalg.eig(tm)
+	invvecs = np.linalg.inv(vecs)
+
+	ind = np.argmax(np.real(vals))
+	val = np.real(vals[ind])
+	logy = float(mp.log(y))
+	logm = logy + log(val)
+	slope = -logm / blockSize
+
+	# ds = -d log m / blockSize
+	# d log m = dm / m = d (m/y) / (m/y)
+	# What we've written below as dm is actually d(m/y), so we divide it by val (which is just m/y).
+	dm = np.dot(invvecs[ind], np.dot(dt, vecs[:,ind]))
+	ds = -dm / (val * blockSize)
 
 	# Compute free energy
-	z = sum(e1 * (tm**(n2 - 1)) * e2)
-	f = -real(log(z))
+	z = np.sum(np.dot(e1, np.dot(np.linalg.matrix_power(tm, n2 - 1), e2)))
+	f = -real(log(z)) - (n2 - 1)*logy # logy provides the correction because we normalized tm
 
 	# Evaluate intercept
 	inter = f - slope*n
 
-	return slope,inter,f
+	return slope,inter,f,ds

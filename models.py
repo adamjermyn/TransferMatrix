@@ -144,23 +144,15 @@ class actin:
 
 		# Wrapped matrices
 		print('Wrapping...')
-		self.T,self.eL,self.eR = tmc.wrapper(self.tm,self.left,self.right,params)
+		self.T,self.eL,self.eR,self.dT = tmc.wrapper(self.tm,self.left,self.right,params)
 		print('Done.')
 
 	def fN(self,params,n=50):
-		return tmc.fN(self.T,self.eL,self.eR,params,self.blockSize,n)
+		return tmc.fN(self.T,self.eL,self.eR,self.dT,params,self.blockSize,n)
 
 	def cofilinBindingFrac(self,params):
 		# Assumes that params[0] is the binding energy
-		p0 = np.zeros(params.shape)
-		p1 = np.zeros(params.shape)
-		p0 += params
-		p1 += params
-		p0[0] -= 1e-8
-		p1[0] += 1e-8
-		sM,_,_ = self.fN(p0)
-		sP,_,_ = self.fN(p1)
-		return ((sP-sM)/(2e-8))
+		return self.fN(params)[3]
 
 	def bindingFinder(self,params,bf):
 		# Assumes that params[0] is the binding energy
