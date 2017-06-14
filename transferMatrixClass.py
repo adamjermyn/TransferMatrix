@@ -3,6 +3,7 @@ import sympy as sp
 from sympy import exp
 import itertools as it
 from numpy import real, log
+from scipy.linalg import eig
 import mpmath as mp
 
 def partition(n, blockSize):
@@ -213,8 +214,7 @@ def fN(T,eL,eR,dT,params,blockSize,n):
 	dt = np.array(dt.tolist(), dtype=float)
 
 	# Compute slope and slope derivative
-	vals, vecs = np.linalg.eig(tm)
-	invvecs = np.linalg.inv(vecs)
+	vals, invvecs, vecs = eig(tm, left=True, right=True)
 
 	ind = np.argmax(np.real(vals))
 	val = np.real(vals[ind])
@@ -225,8 +225,8 @@ def fN(T,eL,eR,dT,params,blockSize,n):
 	# ds = -d log m / blockSize
 	# d log m = dm / m = d (m/y) / (m/y)
 	# What we've written below as dm is actually d(m/y), so we divide it by val (which is just m/y).
-	dm = np.dot(invvecs[ind], np.dot(dt, vecs[:,ind]))
-	ds = -dm / (val * blockSize)
+	dm = np.dot(np.conj(invvecs[:,ind]), np.dot(dt, vecs[:,ind])) / np.dot(np.conj(invvecs[:,ind]), vecs[:,ind])
+	ds = -np.real(dm) / (val * blockSize)
 
 	# Compute free energy
 	z = np.sum(np.dot(e1, np.dot(np.linalg.matrix_power(tm, n2 - 1), e2)))

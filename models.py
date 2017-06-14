@@ -7,10 +7,11 @@ from numpy import log
 # Helpers
 
 def brentqWrapper(func):
-	init = 10.
-	while init < 1e5 and func(-init) >= func(init):
+	init = 3
+
+	while init < 1e10 and np.sign(func(init)) == np.sign(func(-init)):
 		init *= 2
-	
+
 	a = brentq(func,-init,init)
 	return a
 
@@ -160,6 +161,7 @@ class actin:
 			pcopy = np.copy(params)
 			pcopy[0] = bindingE
 			return self.cofilinBindingFrac(pcopy)-bf
+
 		bindingE = brentqWrapper(ff)
 		if ff(bindingE)>1e-8:
 			print('Error:',bindingE,ff(bindingE),ff(bindingE-1e-3),ff(bindingE+1e-3))
