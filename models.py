@@ -92,6 +92,24 @@ def eFuncTwoPlaneVeryShortActinModel(state, params): # Accepts binary inputs
 			e += params[2]
 	return e
 
+def actinModelFactory(inPlane, outPlane):
+	'''
+	Generates the energy function for an Actin binding model.
+	
+	inPlane is a list of integers specifying which in-plane bonds contribute
+	to the energy. This is indexed so that zero means the bond the Cofilin is attached
+	to.
+
+	outPlane is a list of integers specifying which out-of-plane bonds contribute to the
+	energy. This is indexed so that zero is not used, one and later mean the bonds
+	to the right of that the Cofilin is attached to and negative one and earlier are
+	those to the left.
+	'''
+	def energy(state, params):
+		# State and params are binary inputs
+		
+
+def eFuncSymmetricTwoPlaneVeryShortActinModel(state, params): # Accepts binary inputs
 	e = 0
 	# Binding energy
 	for i in range(len(state)):
