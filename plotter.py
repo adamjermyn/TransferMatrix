@@ -2,11 +2,10 @@ import numpy as np
 import models
 import matplotlib
 import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 from data import molarConv
 import data
 import sympy as sp
-
-#matplotlib.style.use('http://plotornot.chrisbeaumont.org/matplotlibrc')
 
 def plotterCran(minB,maxB,model,cRan,q,w,j):
 	for c in cRan:
@@ -92,9 +91,9 @@ act3 = models.actin(models.eFuncTwoPlaneVeryShortActinModel,[0,1],sp.symbols('a 
 modelss = [act1,act2,act3]
 
 c,bindingF,length,dl,name = data.data('h')
-plotterModels(minB,maxB,modelss,3e-6,qH,wH,jH,['Long','Medium','Short'],bindingF,length,dl)
+plotterModels(minB,maxB,modelss,3e-6,qH,wH,jH,['3-Interface','2-Interface','1-Interface'],bindingF,length,dl)
 c,bindingF,length,dl,name = data.data('d')
-plotterModels(minB,maxB,modelss,2e-6,qD,wD,jD,['Long','Medium','Short'],bindingF,length,dl)
+plotterModels(minB,maxB,modelss,2e-6,qD,wD,jD,['3-Interface','2-Interface','1-Interface'],bindingF,length,dl)
 
 # Concentration range
 #cRan = [1e-6,2e-6,3e-6,5e-6,1e-5,3e-5 ]
