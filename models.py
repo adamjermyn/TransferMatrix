@@ -19,7 +19,7 @@ def meanL(c,inter,j):
 	b = inter - j
 	x = c*np.exp(b)
 	ret = np.zeros(x.shape)
-	ret = 0.5*(-1 + np.sqrt(1 + 4*x))
+	ret = x * (-1 + np.sqrt(1 + 4*x))/(2 * x + 1 - np.sqrt(1 + 4*x))
 	return ret
 
 # Models
@@ -30,39 +30,6 @@ def eFuncIsing(state, params): # Accepts binary inputs
 		e += state[i]*params[0]
 	for i in range(len(state)-1):
 		e += state[i]*state[i+1]*params[1]
-	return e
-
-def eFuncOnePlaneActinModel(state, params): # Accepts binary inputs
-	e = 0
-	# Binding energy
-	for i in range(len(state)):
-		e += params[0]*state[i]
-	# Bonds:
-	x = list(state) + [0]
-	for i in range(1,len(state)):
-		if x[i] == 1:
-			e += params[1]
-		elif x[i-1] == 1 and x[i+1] == 0:
-			e += params[2]
-		elif x[i-1] == 0 and x[i+1] == 1:
-			e += params[2]
-		elif x[i-1] == 1 and x[i+1] == 1:
-			e += params[1]
-	return e
-
-def eFuncTwoPlaneActinModel(state, params): # Accepts binary inputs
-	e = 0
-	# Binding energy
-	for i in range(len(state)):
-		e += params[0]*state[i]
-	# In-plane bonds
-	for i in range(2,len(state)):
-		if state[i] == 1 or state[i-2] == 1:
-			e += params[1]
-	# Out-of-plane bonds
-	for i in range(len(state)-1):
-		if sum(state[i:min(len(state),i+4)]) > 0:
-			e += params[2]
 	return e
 
 def eFuncSymmetricTwoPlaneActinModel(state, params): # Accepts binary inputs
@@ -80,18 +47,18 @@ def eFuncSymmetricTwoPlaneActinModel(state, params): # Accepts binary inputs
 			e += params[2]
 	return e
 
-def eFuncLongTwoPlaneActinModel(state, params): # Accepts binary inputs
+def eFuncTwoPlaneActinModel(state, params): # Accepts binary inputs
 	e = 0
 	# Binding energy
 	for i in range(len(state)):
 		e += params[0]*state[i]
 	# In-plane bonds
-	for i in range(len(state)):
-		if sum(state[max(0,i-4):min(len(state),i+4):2]) > 0:
+	for i in range(2,len(state)):
+		if state[i] == 1 or state[i-2] == 1:
 			e += params[1]
 	# Out-of-plane bonds
 	for i in range(len(state)-1):
-		if sum(state[i:min(len(state),i+6)]) > 0:
+		if sum(state[i:min(len(state),i+4)]) > 0:
 			e += params[2]
 	return e
 
@@ -111,6 +78,20 @@ def eFuncTwoPlaneShortActinModel(state, params): # Accepts binary inputs
 	return e
 
 def eFuncTwoPlaneVeryShortActinModel(state, params): # Accepts binary inputs
+	e = 0
+	# Binding energy
+	for i in range(len(state)):
+		e += params[0]*state[i]
+	# In-plane bonds
+	for i in range(2,len(state)):
+		if state[i] == 1 or state[i-2] == 1:
+			e += params[1]
+	# Out-of-plane bonds
+	for i in range(len(state)-1):
+		if sum(state[i:min(len(state),i+2)]) > 0:
+			e += params[2]
+	return e
+
 	e = 0
 	# Binding energy
 	for i in range(len(state)):
