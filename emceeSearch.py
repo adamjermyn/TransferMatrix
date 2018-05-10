@@ -23,6 +23,8 @@ elif sys.argv[1] == 'medium':
 	model = models.eFuncTwoPlaneShortActinModel
 elif sys.argv[1] == 'long':
 	model = models.eFuncTwoPlaneActinModel
+elif sys.argv[1] == 'sym':
+	model = models.eFuncSymmetricTwoPlaneActinModel
 
 s = sys.argv[2] # must be 'd' or 'h'
 
