@@ -3,16 +3,15 @@ from scipy.optimize import brentq
 from numpy import exp,log,real
 import numpy as np
 import itertools as it
-import matplotlib.pyplot as plt
 import transferMatrixClass as tmc
 import models
 import emcee as em
-from corner import corner
 import sympy as sp
 import sys
 
 # The first input is a string specifying the kind of Actin, either 'h' or 'd'.
 s = sys.argv[1] # must be 'd' or 'h'
+s2 = sys.argv[5]
 
 # The next two inputs specify the model range
 left = int(sys.argv[2])
@@ -20,10 +19,22 @@ right = int(sys.argv[3])
 
 # For file names
 fname = s + '_' + sys.argv[2] + '_' + sys.argv[3]
-modelSTR = 'Output/' + sys.argv[1]
+modelSTR = 'Output/' + fname
+
+# Threads
+threads = int(sys.argv[4])
 
 # Build the model
-model, blockSize = models.actinModelRuleFactory(left, right)
+if s2 == 'inclusive':
+	fname = fname + '_inclusive'
+	modelSTR = modelSTR + '_inclusive'
+	model, blockSize = models.actinModelRuleFactory(left, right)
+elif s2 == 'exclusive':
+	s3 = sys.argv[6]
+	fname = fname + '_exclusive_' + s3
+	modelSTR = modelSTR + '_exclusive_' + s3
+	model, blockSize = models.exclusiveActinModelRuleFactory(left, right, sides=s3)
+
 act = models.actin(model, [0,1], sp.symbols('a b c'), blockSize=blockSize)
 
 def evaluate(theta, x, y, c):
@@ -63,14 +74,14 @@ def lnprob(theta, x, y, yerr,c):
 	print('Params:',theta)
 	return lp + lnlike(theta, x, y, yerr,c)
 
-ndim, nwalkers, nper = 3, 8, 40
+ndim, nwalkers, nper = 3, 32, 20
 
 c,bindingF,length,dl,name = data(s)
 
 print('Beginning '+name+' search...')
 
 pos = [2*np.random.randn(ndim)+np.array([0,0,-7.5]) for i in range(nwalkers)]
-sampler = em.EnsembleSampler(nwalkers, ndim, lnprob, args=(bindingF, length, dl, c), threads=1)
+sampler = em.EnsembleSampler(nwalkers, ndim, lnprob, args=(bindingF, length, dl, c), threads=threads)
 
 for i in range(1000):
 	print(i)
@@ -84,23 +95,7 @@ for i in range(1000):
 	print('PARAMSIGMAS:',q_mcmc,w_mcmc,j_mcmc,reducedChiSquared((q_mcmc[0],w_mcmc[0],j_mcmc[0]),bindingF,length,dl,c))
 	np.savetxt(modelSTR, samples)
 	np.savetxt(modelSTR+'_summary.txt', np.array([q_mcmc,w_mcmc,j_mcmc,[0,0,reducedChiSquared((q_mcmc[0],w_mcmc[0],j_mcmc[0]),bindingF,length,dl,c)]]))
-	fig = corner(samples, labels=["$Q$", "$W$","$J$", "$\ln\,f$"])
-	fig.savefig(modelSTR+'_'+'triangle'+s+'.png')
-	plt.close('all')
-	plt.scatter(bindingF,length)
-	plt.errorbar(bindingF,length,yerr=dl)
 	bFhighRes = np.linspace(min(bindingF),max(bindingF),num=100,endpoint=True)
 	fHR = np.zeros(100)
-	for i,x in enumerate(bFhighRes):
-		p = act.bindingFinder((0,q_mcmc[0],w_mcmc[0]),x)[0]
-		fHR[i] = act.fN((p,q_mcmc[0],w_mcmc[0]))[1]
-		if i%10==0:
-			print(p)
-	mlHighRes = models.meanL(c,fHR,j_mcmc[0])
-	plt.plot(bFhighRes,mlHighRes)
-	plt.xlabel('Cofilin Binding Fraction')
-	plt.ylabel('Filament length ($\mu m$)')
-	plt.title(name)
-	plt.savefig(modelSTR+'_'+'fig.pdf',dpi=100)
 
 exit()
