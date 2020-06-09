@@ -1,7 +1,11 @@
 import numpy as np
+import sys
 
-left = list(range(-3,1))
-right = list(range(1,5))
+postfix = sys.argv[1]
+
+left = list(range(-4,1))
+right = list(range(0,5))
+left = left[::-1]
 
 chis = np.zeros((len(left), len(right)))
 js = np.zeros((len(left), len(right)))
@@ -12,25 +16,38 @@ outs = np.zeros((len(left), len(right),4,3))
 
 for i,l in enumerate(left):
 	for j,r in enumerate(right):
-		try:
-			params = np.loadtxt('Output/d_' + str(l) + '_' + str(r) + '_summary.txt')
-			outs[i,j] = params
-		except:
-			print('Error.',i,j,'not found!')
+		if r - l < 5:
+			try:
+				params = np.loadtxt('Output/d_' + str(l) + '_' + str(r) + '_' + postfix +  '_summary.txt')
+				outs[i,j] = params
+			except:
+				print('Error.',l,r,'not found!')
 
 # Correct decoupled Q models
 
-outs[1,0,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
-outs[2,0,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
-outs[3,0,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
-outs[3,1,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
+if postfix == 'inclusive':
+	outs[0,0,3,2] *= 1. * (9 - 3 - 1) / (9 - 1 - 1)
+	outs[1,0,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
+	outs[1,1,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
+	outs[0,1,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
+elif postfix == 'exclusive_left':
+	outs[0,0,3,2] *= 1. * (9 - 3 - 1) / (9 - 1 - 1)
+	outs[0,2,3,2] *= 1. * (9 - 3 - 1) / (9 - 1 - 1)
+	outs[0,1,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
+	outs[1:3,0:2,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
+elif postfix == 'exclusive_both':
+	outs[:3,:3,3,2] *= 1. * (9 - 3 - 1) / (9 - 2 - 1)
+	outs[0,0,3,2] *= 1. * (9 - 2 - 1) / (9 - 1 - 1)
+else:
+	raise ValueError
+
 
 # Account for convention on partition function
 outs[:,:,:3,:3] *= -1
 
 # Print chis
 
-print('&&$\\frac{\\chi^2}{N-1}$&&\\\\')
+print('&&$\\frac{\\chi^2}{N-1}$&&&\\\\')
 print('L,R &',end='')
 for r in right[:-1]:
 	print(r,'&',end='')
@@ -40,14 +57,20 @@ print('\\hline')
 for i in range(len(left)):
 	print(left[i],'&',end='')
 	for j in range(len(right)-1):
-		print(round(outs[i,j,3,2],2),'&',end='')
-	print(round(outs[i,-1,3,2],2),end='')
+		if outs[i,j,3,2] == 0:
+			print('','&',end='')
+		else:
+			print(round(outs[i,j,3,2],2),'&',end='')
+	if outs[i,-1,3,2] == 0:
+		print('',end='')
+	else:
+		print(round(outs[i,-1,3,2],2),end='')
 	print('\\\\')
 print('\\hline')
 
 # Print js
 
-print('&&$J$&&\\\\')
+print('&&$J$&&&\\\\')
 print('L,R &',end='')
 for r in right[:-1]:
 	print(r,'&',end='')
@@ -57,14 +80,20 @@ print('\\hline')
 for i in range(len(left)):
 	print(left[i],'&',end='')
 	for j in range(len(right)-1):
-		print('$',round(outs[i,j,2,0],2),'^{',round(outs[i,j,2,1],2),'}_{',round(outs[i,j,2,2],2),'}$&',end='')
-	print('$',round(outs[i,j,2,0],2),'^{',round(outs[i,j,2,1],2),'}_{',round(outs[i,j,2,2],2),'}$',end='')
+		if outs[i,j,2,0] == 0:
+			print('','&',end='')
+		else:
+			print('$',round(outs[i,j,2,0],2),'^{',round(outs[i,j,2,1],2),'}_{',round(outs[i,j,2,2],2),'}$&',end='')
+	if outs[i,-1,2,0] == 0:
+		print('',end='')
+	else:
+		print('$',round(outs[i,-1,2,0],2),'^{',round(outs[i,-1,2,1],2),'}_{',round(outs[i,-1,2,2],2),'}$',end='')
 	print('\\\\')
 print('\\hline')
 
 # Print qs
 
-print('&&$Q$&&\\\\')
+print('&&$Q$&&&\\\\')
 print('L,R &',end='')
 for r in right[:-1]:
 	print(r,'&',end='')
@@ -74,14 +103,20 @@ print('\\hline')
 for i in range(len(left)):
 	print(left[i],'&',end='')
 	for j in range(len(right)-1):
-		print('$',round(outs[i,j,0,0],2),'^{',round(outs[i,j,0,1],2),'}_{',round(outs[i,j,0,2],2),'}$&',end='')
-	print('$',round(outs[i,j,0,0],2),'^{',round(outs[i,j,0,1],2),'}_{',round(outs[i,j,0,2],2),'}$',end='')
+		if outs[i,j,0,0] == 0:
+			print('&',end='')
+		else:
+			print('$',round(outs[i,j,0,0],2),'^{',round(outs[i,j,0,1],2),'}_{',round(outs[i,j,0,2],2),'}$&',end='')
+	if outs[i,-1,0,0] == 0:
+		print('',end='')
+	else:
+		print('$',round(outs[i,-1,0,0],2),'^{',round(outs[i,-1,0,1],2),'}_{',round(outs[i,-1,0,2],2),'}$',end='')
 	print('\\\\')
 print('\\hline')
 
 # Print ws
 
-print('&&$W$&&\\\\')
+print('&&$W$&&&\\\\')
 print('L,R &',end='')
 for r in right[:-1]:
 	print(r,'&',end='')
@@ -91,8 +126,14 @@ print('\\hline')
 for i in range(len(left)):
 	print(left[i],'&',end='')
 	for j in range(len(right)-1):
-		print('$',round(outs[i,j,1,0],2),'^{',round(outs[i,j,1,1],2),'}_{',round(outs[i,j,1,2],2),'}$&',end='')
-	print('$',round(outs[i,j,1,0],2),'^{',round(outs[i,j,1,1],2),'}_{',round(outs[i,j,1,2],2),'}$',end='')
+		if outs[i,j,1,0] == 0:
+			print('&',end='')
+		else:
+			print('$',round(outs[i,j,1,0],2),'^{',round(outs[i,j,1,1],2),'}_{',round(outs[i,j,1,2],2),'}$&',end='')
+	if outs[i,-1,1,0] == 0:
+		print('&',end='')
+	else:
+		print('$',round(outs[i,-1,1,0],2),'^{',round(outs[i,-1,1,1],2),'}_{',round(outs[i,-1,1,2],2),'}$',end='')
 	print('\\\\')
 print('\\hline')
 

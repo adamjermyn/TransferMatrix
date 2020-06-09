@@ -11,26 +11,19 @@ from corner import corner
 import sympy as sp
 import sys
 
-# Can specify s = 'h' or 'd' for the two kinds of actin
-# The models we use are:
-# short - eFuncTwoPlaneVeryShortActinModel
-# medium - eFuncTwoPlaneShortActinModel
-# long - eFuncTwoPlaneActinModel
+# The first input is a string specifying the kind of Actin, either 'h' or 'd'.
+s = sys.argv[1] # must be 'd' or 'h'
 
-if sys.argv[1] == 'short':
-	model = models.eFuncTwoPlaneVeryShortActinModel
-elif sys.argv[1] == 'medium':
-	model = models.eFuncTwoPlaneShortActinModel
-elif sys.argv[1] == 'long':
-	model = models.eFuncTwoPlaneActinModel
-elif sys.argv[1] == 'sym':
-	model = models.eFuncSymmetricTwoPlaneActinModel
+# The next two inputs specify the model range
+left = int(sys.argv[2])
+right = int(sys.argv[3])
 
-s = sys.argv[2] # must be 'd' or 'h'
+# For file names
+fname = s + '_' + sys.argv[2] + '_' + sys.argv[3]
+modelSTR = 'Output/' + sys.argv[1]
 
-modelSTR = sys.argv[1] + '_' + s
-
-_, _, _, blockSize = tmc.transferMatrixVariableSize(model, [0,1], sp.symbols('a b c'))
+# Build the model
+model, blockSize = models.actinModelRuleFactory(left, right)
 act = models.actin(model, [0,1], sp.symbols('a b c'), blockSize=blockSize)
 
 def evaluate(theta, x, y, c):
@@ -90,7 +83,7 @@ for i in range(1000):
                                                 axis=0)))
 	print('PARAMSIGMAS:',q_mcmc,w_mcmc,j_mcmc,reducedChiSquared((q_mcmc[0],w_mcmc[0],j_mcmc[0]),bindingF,length,dl,c))
 	np.savetxt(modelSTR, samples)
-	np.savetxt(modelSTR+'_summary', np.array([q_mcmc,w_mcmc,j_mcmc,[0,0,reducedChiSquared((q_mcmc[0],w_mcmc[0],j_mcmc[0]),bindingF,length,dl,c)]]))
+	np.savetxt(modelSTR+'_summary.txt', np.array([q_mcmc,w_mcmc,j_mcmc,[0,0,reducedChiSquared((q_mcmc[0],w_mcmc[0],j_mcmc[0]),bindingF,length,dl,c)]]))
 	fig = corner(samples, labels=["$Q$", "$W$","$J$", "$\ln\,f$"])
 	fig.savefig(modelSTR+'_'+'triangle'+s+'.png')
 	plt.close('all')
@@ -108,6 +101,6 @@ for i in range(1000):
 	plt.xlabel('Cofilin Binding Fraction')
 	plt.ylabel('Filament length ($\mu m$)')
 	plt.title(name)
-	plt.savefig(modelSTR+'_'+'fig'+s+'.png',dpi=100)
+	plt.savefig(modelSTR+'_'+'fig.pdf',dpi=100)
 
 exit()

@@ -11,6 +11,7 @@ import sys
 
 # The first input is a string specifying the kind of Actin, either 'h' or 'd'.
 s = sys.argv[1] # must be 'd' or 'h'
+s2 = sys.argv[5]
 
 # The next two inputs specify the model range
 left = int(sys.argv[2])
@@ -24,7 +25,16 @@ modelSTR = 'Output/' + fname
 threads = int(sys.argv[4])
 
 # Build the model
-model, blockSize = models.actinModelRuleFactory(left, right)
+if s2 == 'inclusive':
+	fname = fname + '_inclusive'
+	modelSTR = modelSTR + '_inclusive'
+	model, blockSize = models.actinModelRuleFactory(left, right)
+elif s2 == 'exclusive':
+	s3 = sys.argv[6]
+	fname = fname + '_exclusive_' + s3
+	modelSTR = modelSTR + '_exclusive_' + s3
+	model, blockSize = models.exclusiveActinModelRuleFactory(left, right, sides=s3)
+
 act = models.actin(model, [0,1], sp.symbols('a b c'), blockSize=blockSize)
 
 def evaluate(theta, x, y, c):

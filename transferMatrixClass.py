@@ -158,15 +158,21 @@ def wrapper(tm,leftEnds,rightEnds,params):
 	print('Wrapping transfer matrix...')
 	T = sp.lambdify(params, tm, "mpmath")
 	print('Wrapping transfer matrix derivative...')
-	dT = sp.lambdify(params, tm.diff(params[0]), "mpmath")
+	dP = sp.lambdify(params, tm.diff(params[0]), "mpmath")
+	dQ = sp.lambdify(params, tm.diff(params[1]), "mpmath")
+	dW = sp.lambdify(params, tm.diff(params[2]), "mpmath")
 	print('Wrapping left end caps...')
 	eL = list([sp.lambdify(params, l, "mpmath") for l in leftEnds])
+	dQL = list([sp.lambdify(params, l.diff(params[1]), "mpmath") for l in leftEnds])
+	dWL = list([sp.lambdify(params, l.diff(params[2]), "mpmath") for l in leftEnds])
 	print('Wrapping right end caps...')
 	eR = list([sp.lambdify(params, r, "mpmath") for r in rightEnds])
+	dQR = list([sp.lambdify(params, r.diff(params[1]), "mpmath") for r in rightEnds])
+	dWR = list([sp.lambdify(params, r.diff(params[2]), "mpmath") for r in rightEnds])
 	print('Done!')
-	return T,eL,eR,dT
+	return T,eL,eR,dP,dQ,dW,dQL,dWL,dQR,dWR
 
-def fN(T,eL,eR,dT,params,blockSize,n):
+def fN(T,eL,eR,dP,dQ,dW,dQL,dWL,dQR,dWR,params,blockSize,n):
 	'''
 	This method takes as input:
 		T 			-	The wrapped (numerical) transfer matrix.
@@ -191,10 +197,18 @@ def fN(T,eL,eR,dT,params,blockSize,n):
 	# Evaluate endcaps at partition sizes
 	e1 = eL[n1-1](*params)
 	e2 = eR[n3-1](*params)
+	de1_dQ = dQL[n1-1](*params)
+	de2_dQ = dQR[n3-1](*params)
+	de1_dW = dWL[n1-1](*params)
+	de2_dW = dWR[n3-1](*params)
 
 	# Evaluate transfer matrix and derivative
 	tm = T(*params)
-	dt = dT(*params)
+	dp = dP(*params)
+	dt_dQ = dQ(*params)
+	dt_dW = dW(*params)
+
+
 
 	# Normalize
 	sh = np.array(tm.tolist(), dtype=float).shape
@@ -205,13 +219,22 @@ def fN(T,eL,eR,dT,params,blockSize,n):
 				y = abs(tm[i,j])
 
 	tm /= y
-	dt /= y
+	dp /= y
+	dt_dQ /= y
+	dt_dW /= y
+
 
 	# Cast to numpy
 	e1 = np.array(e1.tolist(), dtype=float)
 	e2 = np.array(e2.tolist(), dtype=float)
 	tm = np.array(tm.tolist(), dtype=float)
-	dt = np.array(dt.tolist(), dtype=float)
+	dp = np.array(dp.tolist(), dtype=float)
+	dt_dQ = np.array(dt_dQ.tolist(), dtype=float)
+	dt_dW = np.array(dt_dW.tolist(), dtype=float)
+	de1_dQ = np.array(de1_dQ.tolist(), dtype=float)
+	de2_dQ = np.array(de2_dQ.tolist(), dtype=float)
+	de1_dW = np.array(de1_dW.tolist(), dtype=float)
+	de2_dW = np.array(de2_dW.tolist(), dtype=float)
 
 	# Compute slope and slope derivative
 	vals, invvecs, vecs = eig(tm, left=True, right=True)
@@ -225,14 +248,38 @@ def fN(T,eL,eR,dT,params,blockSize,n):
 	# ds = -d log m / blockSize
 	# d log m = dm / m = d (m/y) / (m/y)
 	# What we've written below as dm is actually d(m/y), so we divide it by val (which is just m/y).
-	dm = np.dot(np.conj(invvecs[:,ind]), np.dot(dt, vecs[:,ind])) / np.dot(np.conj(invvecs[:,ind]), vecs[:,ind])
+	dm = np.dot(np.conj(invvecs[:,ind]), np.dot(dp, vecs[:,ind])) / np.dot(np.conj(invvecs[:,ind]), vecs[:,ind])
 	ds = -np.real(dm) / (val * blockSize)
+
+	d_lnZ_dQ_intensive = np.dot(np.conj(invvecs[:,ind]), np.dot(dt_dQ, vecs[:,ind])) / np.dot(np.conj(invvecs[:,ind]), vecs[:,ind])
+	d_lnZ_dQ_intensive = -np.real(d_lnZ_dQ_intensive) / (val * blockSize)
+
+	d_lnZ_dW_intensive = np.dot(np.conj(invvecs[:,ind]), np.dot(dt_dW, vecs[:,ind])) / np.dot(np.conj(invvecs[:,ind]), vecs[:,ind])
+	d_lnZ_dW_intensive = -np.real(d_lnZ_dW_intensive) / (val * blockSize)
 
 	# Compute free energy
 	z = np.sum(np.dot(e1, np.dot(np.linalg.matrix_power(tm, n2 - 1), e2)))
 	f = -real(log(z)) - (n2 - 1)*logy # logy provides the correction because we normalized tm
 
-	# Evaluate intercept
-	inter = f - slope*n
+	# Compute dlnZ/dQ
+	dlnZ = 0
+	dlnZ += np.sum(np.dot(de1_dQ, np.dot(np.linalg.matrix_power(tm, n2 - 1), e2)))
+	dlnZ += np.sum(np.dot(e1, np.dot(np.linalg.matrix_power(tm, n2 - 1), de2_dQ)))
+	dlnZ += (n2 - 1) * np.sum(np.dot(e1, np.dot(dt_dQ, np.dot(np.linalg.matrix_power(tm, n2 - 2), e2))))
+	dlnZ /= z
+	num_Q = -dlnZ
 
-	return slope,inter,f,ds
+	# Compute dlnZ/dW
+	dlnZ = 0
+	dlnZ += np.sum(np.dot(de1_dW, np.dot(np.linalg.matrix_power(tm, n2 - 1), e2)))
+	dlnZ += np.sum(np.dot(e1, np.dot(np.linalg.matrix_power(tm, n2 - 1), de2_dW)))
+	dlnZ += (n2 - 1) * np.sum(np.dot(e1, np.dot(dt_dW, np.dot(np.linalg.matrix_power(tm, n2 - 2), e2))))
+	dlnZ /= z
+	num_W = -dlnZ
+
+	# Evaluate intercepts
+	inter = f - slope*n
+	interQ = num_Q - d_lnZ_dQ_intensive * n
+	interW = num_W - d_lnZ_dW_intensive * n
+
+	return slope,inter,f,ds, interQ, d_lnZ_dQ_intensive, interW, d_lnZ_dW_intensive
